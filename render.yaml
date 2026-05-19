@@ -1,0 +1,29 @@
+# Render Blueprint для PR Gradient.
+# Можно использовать через Render Dashboard → Blueprints → New from repo,
+# или вручную создать Web Service со следующими настройками.
+#
+# Свободный план Render:
+#   - 750 часов/мес web compute (хватит на 1 instance 24/7)
+#   - 0.1 CPU / 512 MB RAM (достаточно для Next.js 15 + Prisma)
+#   - Сервис засыпает после 15 минут простоя (keep-alive ping решает)
+
+services:
+  - type: web
+    name: pr-gradient
+    runtime: node
+    region: frankfurt
+    plan: free
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /login
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false   # ставится вручную в Render UI после регистрации в Neon
+      - key: SHARED_PASSWORD
+        sync: false   # ставится вручную (см. README)
+      - key: AUTH_TOKEN
+        sync: false   # ставится вручную (см. README)

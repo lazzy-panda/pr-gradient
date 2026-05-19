@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1280, initial-scale=1" />
+  <title>PR Gradient — управление размещениями</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <style>
+    :root {
+      /* Brand colors */
+      --br-vs: #B91C5C;     /* Vivienne Sabó */
+      --br-st: #1D4ED8;     /* Stellary */
+      --br-ib: #059669;     /* Influence Beauty */
+      --br-bb: #EC4899;     /* Beauty Bomb */
+      --br-lg: #EA580C;     /* Love Generation */
+      --br-ad: #374151;     /* ARTDECO */
+      --br-dm: #7C3AED;     /* Deborah Milano */
+      --br-pf: #0891B2;     /* Physicians Formula */
+
+      /* Neutrals */
+      --bg: #F7F7F5;
+      --surface: #FFFFFF;
+      --ink-1: #0B0B0C;
+      --ink-2: #3F3F46;
+      --ink-3: #6B6B73;
+      --ink-4: #9A9AA3;
+      --line-1: #E6E6E2;
+      --line-2: #EFEFEC;
+
+      /* Status */
+      --conflict: #DC2626;
+      --conflict-bg: rgba(220, 38, 38, 0.08);
+      --ok: #16A34A;
+      --ok-bg: rgba(22, 163, 74, 0.10);
+
+      /* Shadow */
+      --sh-1: 0 1px 2px rgba(0,0,0,0.06);
+      --sh-2: 0 4px 8px rgba(0,0,0,0.10);
+      --sh-3: 0 12px 24px rgba(0,0,0,0.18);
+      --sh-modal: 0 24px 48px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.08);
+
+      /* Type */
+      --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Inter, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--ink-1);
+      font-size: 14px;
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    input, select, textarea { font-family: inherit; font-size: 14px; }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb { background: #D4D4CE; border-radius: 8px; border: 2px solid var(--bg); }
+    ::-webkit-scrollbar-thumb:hover { background: #B5B5AE; }
+
+    /* Utility */
+    .row { display: flex; align-items: center; }
+    .col { display: flex; flex-direction: column; }
+    .grow { flex: 1; }
+    .mono { font-family: var(--font-mono); }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Loading shimmer */
+    @keyframes shimmer {
+      0% { background-position: -800px 0; }
+      100% { background-position: 800px 0; }
+    }
+    .shimmer {
+      background: linear-gradient(90deg, #EAEAE4 0%, #F2F2EE 50%, #EAEAE4 100%);
+      background-size: 1600px 100%;
+      animation: shimmer 1.4s linear infinite;
+      border-radius: 6px;
+    }
+
+    /* Pulse on dropped */
+    @keyframes dropPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.55), 0 1px 2px rgba(0,0,0,0.08); }
+      100% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0), 0 1px 2px rgba(0,0,0,0.08); }
+    }
+
+    /* Card snap */
+    @keyframes snapIn {
+      0%   { transform: scale(1.06); }
+      60%  { transform: scale(0.985); }
+      100% { transform: scale(1); }
+    }
+
+    #root { min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="data.jsx"></script>
+  <script type="text/babel" src="icons.jsx"></script>
+  <script type="text/babel" src="calendar-view.jsx"></script>
+  <script type="text/babel" src="schedule-view.jsx"></script>
+  <script type="text/babel" src="placement-modal.jsx"></script>
+  <script type="text/babel" src="blogger-modal.jsx"></script>
+  <script type="text/babel" src="confirm-dialog.jsx"></script>
+  <script type="text/babel" src="app.jsx"></script>
+</body>
+</html>

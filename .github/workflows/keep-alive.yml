@@ -1,0 +1,21 @@
+name: keep-alive
+
+# Пингует продакшен URL каждые 10 минут, чтобы Render free instance не засыпал
+# (свободный план усыпляет после 15 минут простоя; cold-start ~30с).
+#
+# Альтернатива (или дублирующий слой): https://uptimerobot.com — бесплатные
+# 50 мониторов с интервалом 5 минут.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ping login
+        run: |
+          curl -fsS -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" \
+            "${{ vars.PROD_URL || 'https://pr-gradient.onrender.com' }}/login"

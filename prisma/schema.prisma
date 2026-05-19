@@ -1,0 +1,70 @@
+// PR Gradient — Prisma schema
+// Spec: docs/PR_Gradient_Spec_Backend.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Brands — 8 brands of NTC "Gradient" holding.
+// Stored as strings (SQLite doesn't support enums). Validated by zod at API layer.
+//   VIVIENNE_SABO | STELLARY | INFLUENCE_BEAUTY | BEAUTY_BOMB |
+//   LOVE_GENERATION | ARTDECO | DEBORAH_MILANO | PHYSICIANS_FORMULA
+
+// Categories — extended prototype set covering the real xlsx data:
+//   LIPS | EYES | FACE | BROWS | NAILS | HAIR | ACCESSORIES |
+//   COLLECTIONS | EXCLUSIVE | CARE
+
+// Tools — KRUPNY | SWIPE | POSEV
+// Platforms — TIKTOK | VK | TELEGRAM | INSTAGRAM | YOUTUBE
+// PlacementStatus — PLANNED | PUBLISHED | CANCELLED
+// BloggerLevel — TOP | MID | NANO
+
+model Blogger {
+  id              String      @id @default(uuid())
+  canonicalName   String      @unique
+  level           String      @default("MID") // TOP | MID | NANO
+
+  handleTiktok    String?
+  handleVk        String?
+  handleTelegram  String?
+  handleInstagram String?
+  handleYoutube   String?
+
+  contact         String?
+  notes           String?
+
+  placements      Placement[]
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([canonicalName])
+}
+
+model Placement {
+  id        String   @id @default(uuid())
+  date      DateTime // YYYY-MM-DD; time always 00:00:00 UTC
+  brand     String   // see Brands above
+  category  String   // see Categories above
+  product   String
+  tool      String   // KRUPNY | SWIPE | POSEV
+  platform  String   // TIKTOK | VK | TELEGRAM | INSTAGRAM | YOUTUBE
+  postUrl   String?
+  status    String   @default("PLANNED") // PLANNED | PUBLISHED | CANCELLED
+
+  blogger   Blogger  @relation(fields: [bloggerId], references: [id], onDelete: Restrict)
+  bloggerId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([bloggerId, date]) // critical for conflict detection
+  @@index([brand, date])
+  @@index([status])
+}

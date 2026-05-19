@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand */
+  --color-br-vs: #B91C5C;
+  --color-br-st: #1D4ED8;
+  --color-br-ib: #059669;
+  --color-br-bb: #EC4899;
+  --color-br-lg: #EA580C;
+  --color-br-ad: #374151;
+  --color-br-dm: #7C3AED;
+  --color-br-pf: #0891B2;
+
+  /* Neutrals */
+  --color-bg: #F7F7F5;
+  --color-surface: #FFFFFF;
+  --color-ink-1: #0B0B0C;
+  --color-ink-2: #3F3F46;
+  --color-ink-3: #6B6B73;
+  --color-ink-4: #9A9AA3;
+  --color-line-1: #E6E6E2;
+  --color-line-2: #EFEFEC;
+
+  /* Status */
+  --color-conflict: #DC2626;
+  --color-ok: #16A34A;
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Inter, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+:root {
+  --conflict-bg: rgba(220, 38, 38, 0.08);
+  --ok-bg: rgba(22, 163, 74, 0.10);
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --sh-2: 0 4px 8px rgba(0, 0, 0, 0.10);
+  --sh-3: 0 12px 24px rgba(0, 0, 0, 0.18);
+  --sh-modal: 0 24px 48px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-ink-1);
+  font-size: 14px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; font-size: 14px; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #D4D4CE; border-radius: 8px; border: 2px solid var(--color-bg); }
+::-webkit-scrollbar-thumb:hover { background: #B5B5AE; }
+
+@keyframes shimmer {
+  0% { background-position: -800px 0; }
+  100% { background-position: 800px 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #EAEAE4 0%, #F2F2EE 50%, #EAEAE4 100%);
+  background-size: 1600px 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 6px;
+}
+
+@keyframes drop-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.55), 0 1px 2px rgba(0,0,0,0.08); }
+  100% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0), 0 1px 2px rgba(0,0,0,0.08); }
+}
+.drop-pulse { animation: drop-pulse 250ms ease-out 1; }
+
+@keyframes m-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes m-pop  { from { transform: translateY(8px) scale(0.985); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Utility classes used across views */
+.app-container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 14px;
+  font-size: 13px; font-weight: 600; line-height: 1.2;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border 120ms ease;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-sm { padding: 7px 10px; font-size: 12px; }
+.btn-primary { background: var(--color-ink-1); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: #232327; }
+.btn-ghost { background: transparent; color: var(--color-ink-2); border-color: var(--color-line-1); }
+.btn-ghost:hover { background: var(--color-bg); color: var(--color-ink-1); }
+.btn-danger { color: var(--color-conflict); border-color: rgba(220,38,38,0.25); }
+.btn-danger:hover { background: var(--conflict-bg); }
+.btn-danger-solid { background: var(--color-conflict); color: #fff; border-color: var(--color-conflict); }
+.btn-danger-solid:hover { background: #B91C1C; border-color: #B91C1C; }
+
+.iconbtn {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: transparent; border: 1px solid transparent;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--color-ink-2);
+}
+.iconbtn:hover { background: var(--color-bg); color: var(--color-ink-1); }
+
+.dot-mini { width: 8px; height: 8px; border-radius: 999px; display: inline-block; flex-shrink: 0; }
+
+/* Loading shimmer block */
+.skeleton {
+  background: linear-gradient(90deg, #EAEAE4 0%, #F2F2EE 50%, #EAEAE4 100%);
+  background-size: 1600px 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 6px;
+}
