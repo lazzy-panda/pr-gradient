@@ -14,7 +14,10 @@ services:
     region: frankfurt
     plan: free
     branch: main
-    buildCommand: npm install && npm run build
+    # --include=dev нужен потому, что NODE_ENV=production у Render заставляет
+    # npm install пропускать devDependencies (typescript, prisma CLI, tailwind),
+    # а они требуются на этапе сборки.
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /login
     autoDeploy: true

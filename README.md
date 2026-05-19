@@ -100,6 +100,61 @@ Same-day cross-brand — **всегда** конфликт (intra-brand игно
 3. Conflict detection — pure-function в `lib/conflict-detect.ts`, переиспользуется и на сервере (validate + 409 on POST), и на клиенте (live preview в форме, drag feedback).
 4. Auth — single shared password в `.env`, cookie HTTP-only / SameSite=lax / 30 дней.
 
+## Deploy (Render + Neon)
+
+Production-инстанс: **https://pr-gradient.onrender.com** (auto-deploy с `main`).
+
+### Стек
+
+- **Render** — Web Service (free tier, Frankfurt, sleep после 15 мин простоя)
+- **Neon** — PostgreSQL (free tier, Frankfurt, server-to-server из Render)
+- **GitHub** — auto-deploy при push в `main`
+- **(опц.)** UptimeRobot — пинг каждые 5 мин против sleep + бесплатный домен `*.is-a.dev` поверх `*.onrender.com`
+
+### Зачем такой стек
+
+Оба провайдера работают из РФ без ВПН: Render и Neon хостятся на AWS, IP-диапазоны не в реестре РКН; поддомены `*.onrender.com` не таргетятся DPI (в отличие от `*.vercel.app` / `*.netlify.app`, которые режут МТС/Билайн). Neon — server-to-server, пользовательский браузер к нему не обращается.
+
+### Первый deploy с нуля
+
+1. **Neon** — `https://console.neon.tech/signup` → создать проект (Frankfurt, Postgres 16) → скопировать `DATABASE_URL` из Connection Details.
+2. **Применить schema локально** (с временным `DATABASE_URL`):
+   ```bash
+   DATABASE_URL="<Neon URL>" npx prisma db push
+   DATABASE_URL="<Neon URL>" npx tsx prisma/seed.ts
+   DATABASE_URL="<Neon URL>" npx tsx scripts/import-excel.ts uploads/PR_Градиент_общая.xlsx
+   ```
+3. **GitHub** — публичный или приватный репо. Если приватный — установите Render GitHub App на репо.
+4. **Render** — `https://dashboard.render.com` → New → Web Service → connect GitHub repo:
+   - Region: **Frankfurt** (рядом с Neon)
+   - Build Command: `npm install && npm run build`
+   - Start Command: `npm start`
+   - Plan: **Free**
+   - Health Check Path: `/login`
+   - Env vars: `DATABASE_URL`, `SHARED_PASSWORD`, `AUTH_TOKEN`, `NODE_ENV=production`
+
+   Генерация секретов:
+   ```bash
+   node -e "console.log('SHARED_PASSWORD=' + require('crypto').randomBytes(8).toString('base64url'))"
+   node -e "console.log('AUTH_TOKEN=' + require('crypto').randomUUID())"
+   ```
+5. **Keep-alive** (опц.) — `.github/workflows/keep-alive.yml` уже в репо. Действует через GitHub Actions cron */10 мин. Альтернатива: UptimeRobot.
+
+### Бесплатный домен `*.is-a.dev`
+
+Fork `https://github.com/is-a-dev/register`, добавить `domains/pr-gradient.json`:
+```json
+{
+  "owner": { "username": "<GitHub login>", "email": "<email>" },
+  "record": { "CNAME": "pr-gradient.onrender.com" }
+}
+```
+PR в `is-a-dev/register` → мержат за 1–24 ч. После мерджа на Render dashboard добавить custom domain `pr-gradient.is-a.dev`.
+
+### Render configuration as code
+
+`render.yaml` в корне репо описывает сервис целиком (имя, регион, билд-команды, healthcheck). Render Blueprint авто-читает его. ENV всё равно ставятся вручную (плейсхолдеры `sync: false`) — секреты не в git.
+
 ## Out of scope MVP
 
 См. `docs/PR_Gradient_Spec_*.md` → «Out of scope». Кратко: user roles, audit log, webhooks, real-time, аналитика, ОРД, scraping, multi-tenant, dark mode, i18n, PWA, e2e-тесты.
