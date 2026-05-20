@@ -1,15 +1,16 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
-import { BRANDS, BRAND_COLORS, BRAND_LABELS } from "@/lib/domain";
+import { useBrands } from "@/hooks/use-brands";
 
 export function BrandLegend() {
+  const { brands } = useBrands();
   return (
     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 18px", padding: "18px 4px 4px", fontSize: 12, color: "var(--color-ink-3)" }}>
-      {BRANDS.map((b) => (
-        <span key={b} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <span className="dot-mini" style={{ background: BRAND_COLORS[b] }} />
-          <span>{BRAND_LABELS[b]}</span>
+      {brands.map((b) => (
+        <span key={b.code} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <span className="dot-mini" style={{ background: b.color }} />
+          <span>{b.name}</span>
         </span>
       ))}
       <span style={{ width: 1, height: 16, background: "var(--color-line-1)" }} />

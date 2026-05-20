@@ -4,10 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { Placement, Blogger, ConflictResult, ConflictReason } from "@/lib/types";
 import {
-  BRAND_COLORS, BRAND_SHORT, BRAND_LABELS,
-  CATEGORY_LABELS, TOOL_LABELS, TOOL_SHORT,
+  CATEGORY_LABELS, TOOL_LABELS, TOOL_SHORT, FALLBACK_BRAND_COLOR,
 } from "@/lib/domain";
 import type { Brand, Tool, Category } from "@/lib/domain";
+import { useBrands, brandColor, brandShort, brandLabel } from "@/hooks/use-brands";
+import type { BrandRow } from "@/lib/types";
 import { useUpdatePlacement, useCheckConflict } from "@/hooks/use-placements";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { detectConflicts } from "@/lib/conflict-detect";
@@ -43,6 +44,7 @@ interface PendingDrop {
 const VISIBLE_BLOGGERS_DEFAULT = 20;
 
 export function ScheduleView({ year, month, placements, bloggers, onOpenPlacement, onOpenBlogger }: Props) {
+  const { byCode: brandsByCode } = useBrands({ includeArchived: true });
   const daysInMonth = new Date(year, month, 0).getDate();
   const days = useMemo(() => {
     const arr: { day: number; ymd: string; dow: number; isWeekend: boolean }[] = [];
@@ -254,6 +256,7 @@ export function ScheduleView({ year, month, placements, bloggers, onOpenPlacemen
                       <Card
                         key={p.id}
                         placement={p}
+                        brandsByCode={brandsByCode}
                         isDragging={drag?.placement.id === p.id}
                         onMouseDown={(e) => onCardMouseDown(e, p)}
                       />
@@ -281,12 +284,12 @@ export function ScheduleView({ year, month, placements, bloggers, onOpenPlacemen
           style={{
             left: drag.cursorX,
             top: drag.cursorY,
-            background: BRAND_COLORS[drag.placement.brand as Brand],
+            background: brandColor(brandsByCode, drag.placement.brand),
             transform: `translate(-14px, -10px) rotate(2deg) scale(1.04)`,
           }}
         >
           <span className="sch-tool-circle">{TOOL_SHORT[drag.placement.tool as Tool] ?? "·"}</span>
-          <span>{BRAND_SHORT[drag.placement.brand as Brand] ?? ""}</span>
+          <span>{brandShort(brandsByCode, drag.placement.brand)}</span>
           {drag.hoverConflict?.hasConflict && drag.hoverConflict.conflicts[0] && (
             <div className="sch-floater-tip">
               <strong>Конфликт</strong>
@@ -441,23 +444,23 @@ export function ScheduleView({ year, month, placements, bloggers, onOpenPlacemen
   );
 }
 
-function Card({ placement, isDragging, onMouseDown }: {
+function Card({ placement, brandsByCode, isDragging, onMouseDown }: {
   placement: Placement;
+  brandsByCode: Record<string, BrandRow>;
   isDragging: boolean;
   onMouseDown: (e: React.MouseEvent) => void;
 }) {
-  const brand = placement.brand as Brand;
   const tool = placement.tool as Tool;
   const category = placement.category as Category;
   return (
     <div
       className={`sch-card ${isDragging ? "is-dragging" : ""}`}
-      style={{ background: BRAND_COLORS[brand] }}
+      style={{ background: brandColor(brandsByCode, placement.brand) }}
       onMouseDown={onMouseDown}
-      title={`${BRAND_LABELS[brand] ?? placement.brand} · ${CATEGORY_LABELS[category] ?? placement.category} · ${TOOL_LABELS[tool] ?? placement.tool}`}
+      title={`${brandLabel(brandsByCode, placement.brand)} · ${CATEGORY_LABELS[category] ?? placement.category} · ${TOOL_LABELS[tool] ?? placement.tool}`}
     >
       <span className="sch-card-tool">{TOOL_SHORT[tool] ?? "·"}</span>
-      <span className="sch-card-brand">{BRAND_SHORT[brand] ?? "?"}</span>
+      <span className="sch-card-brand">{brandShort(brandsByCode, placement.brand)}</span>
       <style>{`
         .sch-card {
           display: inline-flex; align-items: center; gap: 4px;

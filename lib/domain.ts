@@ -1,17 +1,9 @@
 // Domain enums — single source of truth used by both client and server.
 // Stored in DB as strings, validated by zod.
 
-export const BRANDS = [
-  "VIVIENNE_SABO",
-  "STELLARY",
-  "INFLUENCE_BEAUTY",
-  "BEAUTY_BOMB",
-  "LOVE_GENERATION",
-  "ARTDECO",
-  "DEBORAH_MILANO",
-  "PHYSICIANS_FORMULA",
-] as const;
-export type Brand = (typeof BRANDS)[number];
+// Brands are now DB-driven (Brand table); see lib/types.ts → BrandRow.
+// We keep `Brand` as a string alias for compat in older code paths.
+export type Brand = string;
 
 export const CATEGORIES = [
   "LIPS",
@@ -39,39 +31,9 @@ export type PlacementStatus = (typeof PLACEMENT_STATUSES)[number];
 export const BLOGGER_LEVELS = ["TOP", "MID", "NANO"] as const;
 export type BloggerLevel = (typeof BLOGGER_LEVELS)[number];
 
-// Russian display names used in UI (UI is RU-only per spec).
-export const BRAND_LABELS: Record<Brand, string> = {
-  VIVIENNE_SABO: "Vivienne Sabó",
-  STELLARY: "Stellary",
-  INFLUENCE_BEAUTY: "Influence Beauty",
-  BEAUTY_BOMB: "Beauty Bomb",
-  LOVE_GENERATION: "Love Generation",
-  ARTDECO: "ARTDECO",
-  DEBORAH_MILANO: "Deborah Milano",
-  PHYSICIANS_FORMULA: "Physicians Formula",
-};
-
-export const BRAND_SHORT: Record<Brand, string> = {
-  VIVIENNE_SABO: "VS",
-  STELLARY: "ST",
-  INFLUENCE_BEAUTY: "IB",
-  BEAUTY_BOMB: "BB",
-  LOVE_GENERATION: "LG",
-  ARTDECO: "AD",
-  DEBORAH_MILANO: "DM",
-  PHYSICIANS_FORMULA: "PF",
-};
-
-export const BRAND_COLORS: Record<Brand, string> = {
-  VIVIENNE_SABO: "#B91C5C",
-  STELLARY: "#1D4ED8",
-  INFLUENCE_BEAUTY: "#059669",
-  BEAUTY_BOMB: "#EC4899",
-  LOVE_GENERATION: "#EA580C",
-  ARTDECO: "#374151",
-  DEBORAH_MILANO: "#7C3AED",
-  PHYSICIANS_FORMULA: "#0891B2",
-};
+// Fallback color for any brand code we haven't loaded yet (e.g. SSR before API hydrate).
+// Real colors come from useBrands() / brand.color on the Brand row.
+export const FALLBACK_BRAND_COLOR = "#6B6B73";
 
 export const CATEGORY_LABELS: Record<Category, string> = {
   LIPS: "Губы",

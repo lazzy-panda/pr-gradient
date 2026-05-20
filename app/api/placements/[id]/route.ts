@@ -27,6 +27,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const current = await prisma.placement.findUnique({ where: { id } });
   if (!current) return NextResponse.json({ error: "not found" }, { status: 404 });
 
+  // If brand is changing, verify the new brand exists and is not archived.
+  if (patch.brand !== undefined && patch.brand !== current.brand) {
+    const brand = await prisma.brand.findUnique({ where: { code: patch.brand } });
+    if (!brand) return NextResponse.json({ error: `unknown brand: ${patch.brand}` }, { status: 422 });
+    if (brand.isArchived) return NextResponse.json({ error: `brand ${patch.brand} is archived` }, { status: 422 });
+  }
+
   const next = {
     date: patch.date ?? ymdToDateOrYmd(current.date),
     bloggerId: patch.bloggerId ?? current.bloggerId,

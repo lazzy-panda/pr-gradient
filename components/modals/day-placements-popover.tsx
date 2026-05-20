@@ -3,8 +3,9 @@
 import { Plus, X } from "lucide-react";
 import { useEffect } from "react";
 import type { Placement, ConflictResult } from "@/lib/types";
-import { BRAND_COLORS, BRAND_LABELS, CATEGORY_LABELS, TOOL_LABELS } from "@/lib/domain";
-import type { Brand, Category, Tool } from "@/lib/domain";
+import { CATEGORY_LABELS, TOOL_LABELS, FALLBACK_BRAND_COLOR } from "@/lib/domain";
+import type { Category, Tool } from "@/lib/domain";
+import { useBrands } from "@/hooks/use-brands";
 import { fmtRu } from "@/lib/date";
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function DayPlacementsPopover({ ymd, placements, conflictMap, bloggerNameById, onClose, onOpenPlacement, onAddNew }: Props) {
+  const { byCode: brandsByCode } = useBrands({ includeArchived: true });
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", fn);
@@ -37,11 +39,11 @@ export function DayPlacementsPopover({ ymd, placements, conflictMap, bloggerName
           ) : (
             placements.map((p) => (
               <button key={p.id} className={`dp-item ${conflictMap[p.id]?.hasConflict ? "is-conflict" : ""}`} onClick={() => onOpenPlacement(p)}>
-                <span className="dot-mini" style={{ background: BRAND_COLORS[p.brand as Brand], marginTop: 6 }} />
+                <span className="dot-mini" style={{ background: brandsByCode[p.brand]?.color ?? FALLBACK_BRAND_COLOR, marginTop: 6 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600 }}>{bloggerNameById[p.bloggerId] ?? "—"}</div>
                   <div style={{ fontSize: 12, color: "var(--color-ink-3)" }}>
-                    {BRAND_LABELS[p.brand as Brand] ?? p.brand} · {CATEGORY_LABELS[p.category as Category] ?? p.category} · {TOOL_LABELS[p.tool as Tool] ?? p.tool}
+                    {brandsByCode[p.brand]?.name ?? p.brand} · {CATEGORY_LABELS[p.category as Category] ?? p.category} · {TOOL_LABELS[p.tool as Tool] ?? p.tool}
                   </div>
                 </div>
                 {conflictMap[p.id]?.hasConflict && (

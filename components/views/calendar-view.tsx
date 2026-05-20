@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import type { Placement, Blogger, ConflictResult } from "@/lib/types";
-import { BRAND_COLORS, BRAND_LABELS, TOOL_LABELS, CATEGORY_LABELS } from "@/lib/domain";
-import type { Brand, Tool, Category } from "@/lib/domain";
+import { TOOL_LABELS, CATEGORY_LABELS, FALLBACK_BRAND_COLOR } from "@/lib/domain";
+import type { Tool, Category } from "@/lib/domain";
+import { useBrands } from "@/hooks/use-brands";
 import { DayPlacementsPopover } from "@/components/modals/day-placements-popover";
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
 const WEEKDAY_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
 export function CalendarView({ year, month, placements, bloggers, conflictMap, onOpenPlacement, onCreateOnDay }: Props) {
+  const { byCode: brandsByCode } = useBrands({ includeArchived: true });
   // Build grid: pad with leading blanks so Monday is first.
   const grid = useMemo(() => {
     const first = new Date(Date.UTC(year, month - 1, 1));
@@ -86,8 +88,8 @@ export function CalendarView({ year, month, placements, bloggers, conflictMap, o
                   <button
                     key={p.id}
                     className={`cal-dot ${conflictMap[p.id]?.hasConflict ? "is-conflict" : ""}`}
-                    style={{ background: BRAND_COLORS[p.brand as Brand] }}
-                    title={`${bloggerNameById[p.bloggerId] ?? "—"} · ${BRAND_LABELS[p.brand as Brand] ?? p.brand} · ${TOOL_LABELS[p.tool as Tool] ?? p.tool} · ${CATEGORY_LABELS[p.category as Category] ?? p.category}`}
+                    style={{ background: brandsByCode[p.brand]?.color ?? FALLBACK_BRAND_COLOR }}
+                    title={`${bloggerNameById[p.bloggerId] ?? "—"} · ${brandsByCode[p.brand]?.name ?? p.brand} · ${TOOL_LABELS[p.tool as Tool] ?? p.tool} · ${CATEGORY_LABELS[p.category as Category] ?? p.category}`}
                     onClick={(e) => { e.stopPropagation(); onOpenPlacement(p); }}
                   />
                 ))}

@@ -33,6 +33,15 @@ export async function POST(req: Request) {
   }
   const data = parsed.data;
 
+  // Verify the brand exists and is not archived.
+  const brand = await prisma.brand.findUnique({ where: { code: data.brand } });
+  if (!brand) {
+    return NextResponse.json({ error: `unknown brand: ${data.brand}` }, { status: 422 });
+  }
+  if (brand.isArchived) {
+    return NextResponse.json({ error: `brand ${data.brand} is archived` }, { status: 422 });
+  }
+
   const conflictResult = await detectConflictsForTarget({
     date: data.date,
     bloggerId: data.bloggerId,

@@ -7,13 +7,13 @@ import { Check, ChevronDown, Plus, Trash2, X, AlertTriangle, Search } from "luci
 import { toast } from "sonner";
 import { placementInputSchema, type PlacementInput } from "@/lib/schemas";
 import {
-  BRANDS, BRAND_LABELS, BRAND_COLORS,
   CATEGORIES, CATEGORY_LABELS,
   TOOLS, TOOL_LABELS,
   PLATFORMS, PLATFORM_LABELS,
   PLACEMENT_STATUSES, STATUS_LABELS,
 } from "@/lib/domain";
 import type { Brand, Category, Tool, Platform, PlacementStatus } from "@/lib/domain";
+import { useBrands } from "@/hooks/use-brands";
 import { useCheckConflict, useCreatePlacement, useUpdatePlacement, useDeletePlacement } from "@/hooks/use-placements";
 import { useCreateBlogger } from "@/hooks/use-bloggers";
 import type { Placement, Blogger, ConflictResult } from "@/lib/types";
@@ -33,6 +33,7 @@ const todayYmd = () => {
 };
 
 export function PlacementModal({ mode, placement, prefill, bloggers, onClose }: Props) {
+  const { brands: activeBrands } = useBrands(); // active only — can't add new placements with archived brands
   const defaultValues = (mode === "edit" && placement
     ? {
         date: placement.date.slice(0, 10),
@@ -173,7 +174,7 @@ export function PlacementModal({ mode, placement, prefill, bloggers, onClose }: 
               <SelectChip
                 value={field.value}
                 onChange={field.onChange}
-                options={BRANDS.map(b => ({ value: b, label: BRAND_LABELS[b], color: BRAND_COLORS[b] }))}
+                options={activeBrands.map(b => ({ value: b.code, label: b.name, color: b.color }))}
                 placeholder="— выбрать —"
               />
             )}

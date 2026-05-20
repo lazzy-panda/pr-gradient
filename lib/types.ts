@@ -1,5 +1,18 @@
 import type { Brand, Category, Tool, Platform, PlacementStatus, BloggerLevel } from "./domain";
 
+// DB-driven brand metadata. Comes from /api/brands.
+export interface BrandRow {
+  code: string;        // "VIVIENNE_SABO" — primary key, matches Placement.brand
+  name: string;        // "Vivienne Sabó"
+  shortCode: string;   // "VS"
+  color: string;       // "#B91C5C"
+  isHolding: boolean;
+  isArchived: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Blogger {
   id: string;
   canonicalName: string;

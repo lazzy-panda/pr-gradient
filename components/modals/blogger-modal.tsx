@@ -7,10 +7,10 @@ import { useBlogger, useUpdateBlogger } from "@/hooks/use-bloggers";
 import type { Placement } from "@/lib/types";
 import {
   BLOGGER_LEVELS, LEVEL_LABELS,
-  BRAND_COLORS, BRAND_LABELS,
-  CATEGORY_LABELS, TOOL_LABELS, STATUS_LABELS,
+  CATEGORY_LABELS, TOOL_LABELS, STATUS_LABELS, FALLBACK_BRAND_COLOR,
 } from "@/lib/domain";
-import type { Brand, Category, Tool, PlacementStatus, BloggerLevel } from "@/lib/domain";
+import type { Category, Tool, PlacementStatus, BloggerLevel } from "@/lib/domain";
+import { useBrands } from "@/hooks/use-brands";
 import { buildConflictMap } from "@/lib/client-conflict-map";
 import { fmtRu } from "@/lib/date";
 
@@ -22,6 +22,7 @@ interface Props {
 
 export function BloggerModal({ bloggerId, onClose, onOpenPlacement }: Props) {
   const { data: blogger, isLoading } = useBlogger(bloggerId);
+  const { byCode: brandsByCode } = useBrands({ includeArchived: true });
   const updateMut = useUpdateBlogger();
 
   const [form, setForm] = useState<{
@@ -127,8 +128,8 @@ export function BloggerModal({ bloggerId, onClose, onOpenPlacement }: Props) {
                         <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--color-ink-3)", minWidth: 64 }}>
                           {fmtRu(p.date.slice(0, 10))}
                         </span>
-                        <span className="dot-mini" style={{ background: BRAND_COLORS[p.brand as Brand] }} />
-                        <span style={{ fontSize: 12, fontWeight: 500, minWidth: 120 }}>{BRAND_LABELS[p.brand as Brand] ?? p.brand}</span>
+                        <span className="dot-mini" style={{ background: brandsByCode[p.brand]?.color ?? FALLBACK_BRAND_COLOR }} />
+                        <span style={{ fontSize: 12, fontWeight: 500, minWidth: 120 }}>{brandsByCode[p.brand]?.name ?? p.brand}</span>
                         <span style={{ fontSize: 12, color: "var(--color-ink-3)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {CATEGORY_LABELS[p.category as Category] ?? p.category} · {TOOL_LABELS[p.tool as Tool] ?? p.tool}
                         </span>

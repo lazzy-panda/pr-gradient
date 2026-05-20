@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, Search, X } from "lucide-react";
-import { BRANDS, BRAND_COLORS, BRAND_LABELS, BRAND_SHORT } from "@/lib/domain";
+import { useBrands } from "@/hooks/use-brands";
+import { FALLBACK_BRAND_COLOR } from "@/lib/domain";
 import type { Blogger } from "@/lib/types";
 
 interface Props {
@@ -90,6 +91,7 @@ export function FilterBar({
 }
 
 function BrandMultiSelect({ value, onChange }: { value: Set<string>; onChange: (s: Set<string>) => void }) {
+  const { brands, byCode } = useBrands();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -104,7 +106,7 @@ function BrandMultiSelect({ value, onChange }: { value: Set<string>; onChange: (
     if (next.has(id)) next.delete(id); else next.add(id);
     onChange(next);
   };
-  const summary = value.size === 0 ? "Все бренды" : `${value.size} из 8`;
+  const summary = value.size === 0 ? "Все бренды" : `${value.size} из ${brands.length}`;
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <button className={`chip-toggle ${value.size > 0 ? "is-active" : ""}`} onClick={() => setOpen(o => !o)}>
@@ -113,7 +115,7 @@ function BrandMultiSelect({ value, onChange }: { value: Set<string>; onChange: (
         {value.size > 0 && (
           <span style={{ display: "inline-flex", gap: 2 }}>
             {[...value].slice(0, 4).map((id) => (
-              <span key={id} className="dot-mini" style={{ background: BRAND_COLORS[id as keyof typeof BRAND_COLORS] }} />
+              <span key={id} className="dot-mini" style={{ background: byCode[id]?.color ?? FALLBACK_BRAND_COLOR }} />
             ))}
           </span>
         )}
@@ -121,16 +123,16 @@ function BrandMultiSelect({ value, onChange }: { value: Set<string>; onChange: (
       </button>
       {open && (
         <div className="bms-menu">
-          {BRANDS.map((b) => {
-            const on = value.has(b);
+          {brands.map((b) => {
+            const on = value.has(b.code);
             return (
-              <button key={b} className={`bms-item ${on ? "is-on" : ""}`} onClick={() => toggle(b)}>
+              <button key={b.code} className={`bms-item ${on ? "is-on" : ""}`} onClick={() => toggle(b.code)}>
                 <span className={`chip-mark ${on ? "is-on" : ""}`}>
                   {on && <Check size={11} color="#fff" strokeWidth={2.6} />}
                 </span>
-                <span className="dot-mini" style={{ background: BRAND_COLORS[b] }} />
-                <span style={{ flex: 1, textAlign: "left" }}>{BRAND_LABELS[b]}</span>
-                <span className="bms-short">{BRAND_SHORT[b]}</span>
+                <span className="dot-mini" style={{ background: b.color }} />
+                <span style={{ flex: 1, textAlign: "left" }}>{b.name}</span>
+                <span className="bms-short">{b.shortCode}</span>
               </button>
             );
           })}

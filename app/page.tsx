@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, Layers, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Layers, Plus, ChevronLeft, ChevronRight, Settings } from "lucide-react";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { usePlacements } from "@/hooks/use-placements";
 import { useBloggers } from "@/hooks/use-bloggers";
+import { useBrands } from "@/hooks/use-brands";
 import { buildConflictMap } from "@/lib/client-conflict-map";
 import { fmtRuMonthYear } from "@/lib/date";
 import { CalendarView } from "@/components/views/calendar-view";
@@ -12,6 +13,7 @@ import { ScheduleView } from "@/components/views/schedule-view";
 import { FilterBar } from "@/components/filter-bar";
 import { PlacementModal } from "@/components/modals/placement-modal";
 import { BloggerModal } from "@/components/modals/blogger-modal";
+import { BrandsModal } from "@/components/modals/brands-modal";
 import { BrandLegend } from "@/components/brand-legend";
 import type { Placement } from "@/lib/types";
 
@@ -38,6 +40,7 @@ export default function HomePage() {
 
   const { data: placements = [], isLoading } = usePlacements({ from: monthStart, to: monthEnd });
   const { data: bloggers = [] } = useBloggers();
+  const { brands } = useBrands();
   const conflictMap = useMemo(() => buildConflictMap(placements), [placements]);
 
   const totalConflicts = useMemo(
@@ -58,6 +61,7 @@ export default function HomePage() {
     | { kind: "placement-create"; prefill?: Partial<Placement> }
     | { kind: "placement-edit"; placement: Placement }
     | { kind: "blogger"; bloggerId: string }
+    | { kind: "brands" }
     | null
   >(null);
 
@@ -92,7 +96,7 @@ export default function HomePage() {
               <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em" }}>PR Gradient</span>
             </div>
             <div style={{ fontSize: 12, color: "var(--color-ink-3)", paddingLeft: 12, borderLeft: "1px solid var(--color-line-1)" }}>
-              8 брендов · {bloggers.length} блогеров · {placements.length} в этом месяце
+              {brands.length} брендов · {bloggers.length} блогеров · {placements.length} в этом месяце
             </div>
           </div>
 
@@ -111,6 +115,14 @@ export default function HomePage() {
                 <Layers size={15} /> Расписание
               </button>
             </div>
+            <button
+              className="iconbtn"
+              onClick={() => setModal({ kind: "brands" })}
+              aria-label="Управление брендами"
+              title="Бренды"
+            >
+              <Settings size={16} />
+            </button>
             <button className="btn btn-primary" onClick={() => setModal({ kind: "placement-create" })}>
               <Plus size={15} strokeWidth={2.2} /> Размещение
             </button>
@@ -197,6 +209,9 @@ export default function HomePage() {
           onClose={() => setModal(null)}
           onOpenPlacement={(p) => setModal({ kind: "placement-edit", placement: p })}
         />
+      )}
+      {modal?.kind === "brands" && (
+        <BrandsModal onClose={() => setModal(null)} />
       )}
 
       <ComponentStyles />

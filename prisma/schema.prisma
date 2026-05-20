@@ -24,6 +24,20 @@ datasource db {
 // PlacementStatus — PLANNED | PUBLISHED | CANCELLED
 // BloggerLevel — TOP | MID | NANO
 
+model Brand {
+  code        String   @id              // "VIVIENNE_SABO" — also used as Placement.brand value
+  name        String                    // "Vivienne Sabó"
+  shortCode   String                    // "VS"
+  color       String                    // "#B91C5C" — HEX
+  isHolding   Boolean  @default(true)   // part of NTC Gradient holding (true) vs external (false)
+  isArchived  Boolean  @default(false)  // hide from selectors but keep historical placements
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isArchived, sortOrder])
+}
+
 model Blogger {
   id              String      @id @default(uuid())
   canonicalName   String      @unique
