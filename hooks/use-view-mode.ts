@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export type ViewMode = "calendar" | "schedule";
+export type ViewMode = "calendar" | "schedule" | "overview";
 
 const KEY = "prg.view";
 
@@ -12,7 +12,7 @@ export function useViewMode(): [ViewMode, (v: ViewMode) => void] {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(KEY);
-      if (stored === "calendar" || stored === "schedule") setView(stored);
+      if (stored === "calendar" || stored === "schedule" || stored === "overview") setView(stored);
     } catch {}
   }, []);
 

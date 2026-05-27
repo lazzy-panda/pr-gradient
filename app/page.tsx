@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, Layers, Plus, ChevronLeft, ChevronRight, Settings } from "lucide-react";
+import { Calendar, Layers, LayoutGrid, Plus, ChevronLeft, ChevronRight, Settings } from "lucide-react";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { usePlacements } from "@/hooks/use-placements";
 import { useBloggers } from "@/hooks/use-bloggers";
@@ -10,6 +10,8 @@ import { buildConflictMap } from "@/lib/client-conflict-map";
 import { fmtRuMonthYear } from "@/lib/date";
 import { CalendarView } from "@/components/views/calendar-view";
 import { ScheduleView } from "@/components/views/schedule-view";
+import { OverviewView } from "@/components/views/overview-view";
+import { OVERVIEW_YEAR } from "@/lib/overview-data";
 import { FilterBar } from "@/components/filter-bar";
 import { PlacementModal } from "@/components/modals/placement-modal";
 import { BloggerModal } from "@/components/modals/blogger-modal";
@@ -39,9 +41,19 @@ export default function HomePage() {
   const monthEnd = `${year}-${String(month).padStart(2, "0")}-${new Date(year, month, 0).getDate()}`;
 
   const { data: placements = [], isLoading } = usePlacements({ from: monthStart, to: monthEnd });
+  // Overview needs full-year data to populate "real placements" lists in popovers.
+  const { data: yearPlacements = [] } = usePlacements(
+    effectiveView === "overview"
+      ? { from: `${OVERVIEW_YEAR}-01-01`, to: `${OVERVIEW_YEAR}-12-31` }
+      : {},
+  );
   const { data: bloggers = [] } = useBloggers();
   const { brands } = useBrands();
   const conflictMap = useMemo(() => buildConflictMap(placements), [placements]);
+  const yearConflictMap = useMemo(
+    () => effectiveView === "overview" ? buildConflictMap(yearPlacements) : {},
+    [yearPlacements, effectiveView],
+  );
 
   const totalConflicts = useMemo(
     () => placements.filter((p) => conflictMap[p.id]?.hasConflict).length,
@@ -103,6 +115,12 @@ export default function HomePage() {
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div className="seg seg-desktop" role="tablist" aria-label="Режим просмотра">
               <button
+                className={`seg-btn ${effectiveView === "overview" ? "is-active" : ""}`}
+                onClick={() => setView("overview")}
+              >
+                <LayoutGrid size={15} /> Общий
+              </button>
+              <button
                 className={`seg-btn ${effectiveView === "calendar" ? "is-active" : ""}`}
                 onClick={() => setView("calendar")}
               >
@@ -130,32 +148,48 @@ export default function HomePage() {
         </div>
       </header>
 
-      <div className="app-container">
-        <FilterBar
-          brandFilter={brandFilter}
-          onBrandFilterChange={setBrandFilter}
-          bloggerFilter={bloggerFilter}
-          onBloggerFilterChange={setBloggerFilter}
-          bloggers={bloggers}
-          onlyConflicts={onlyConflicts}
-          onOnlyConflictsChange={setOnlyConflicts}
-          totalConflicts={totalConflicts}
-          right={
-            <div className="monthnav">
-              <button className="iconbtn" onClick={goPrev} aria-label="Предыдущий месяц">
-                <ChevronLeft size={16} />
-              </button>
-              <span className="monthnav-label">{fmtRuMonthYear(year, month)}</span>
-              <button className="iconbtn" onClick={goNext} aria-label="Следующий месяц">
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          }
-        />
-      </div>
+      {effectiveView !== "overview" && (
+        <div className="app-container">
+          <FilterBar
+            brandFilter={brandFilter}
+            onBrandFilterChange={setBrandFilter}
+            bloggerFilter={bloggerFilter}
+            onBloggerFilterChange={setBloggerFilter}
+            bloggers={bloggers}
+            onlyConflicts={onlyConflicts}
+            onOnlyConflictsChange={setOnlyConflicts}
+            totalConflicts={totalConflicts}
+            right={
+              <div className="monthnav">
+                <button className="iconbtn" onClick={goPrev} aria-label="Предыдущий месяц">
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="monthnav-label">{fmtRuMonthYear(year, month)}</span>
+                <button className="iconbtn" onClick={goNext} aria-label="Следующий месяц">
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            }
+          />
+        </div>
+      )}
 
-      <main className="app-container" style={{ paddingBottom: 24 }}>
-        {isLoading ? (
+      <main className="app-container" style={{ paddingBottom: 24, paddingTop: effectiveView === "overview" ? 16 : 0 }}>
+        {effectiveView === "overview" ? (
+          <>
+            <OverviewView
+              placements={yearPlacements}
+              bloggers={bloggers}
+              conflictMap={yearConflictMap}
+              onOpenPlacement={(p) => setModal({ kind: "placement-edit", placement: p })}
+              onJumpToSchedule={({ year: y, month: m }) => { setYear(y); setMonth(m); setView("schedule"); }}
+              onAddPlacementWith={({ brand, date, product }) =>
+                setModal({ kind: "placement-create", prefill: { brand, date, product } as Partial<Placement> })
+              }
+            />
+            <BrandLegend />
+          </>
+        ) : isLoading ? (
           <div className="skeleton" style={{ height: 480 }} />
         ) : visiblePlacements.length === 0 ? (
           <EmptyState onAdd={() => setModal({ kind: "placement-create" })} />
