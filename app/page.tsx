@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, Layers, LayoutGrid, Plus, ChevronLeft, ChevronRight, Settings } from "lucide-react";
+import { Calendar, Layers, LayoutGrid, Plus, ChevronLeft, ChevronRight, Store, Users } from "lucide-react";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { usePlacements } from "@/hooks/use-placements";
 import { useBloggers } from "@/hooks/use-bloggers";
@@ -15,6 +15,7 @@ import { OVERVIEW_YEAR } from "@/lib/overview-data";
 import { FilterBar } from "@/components/filter-bar";
 import { PlacementModal } from "@/components/modals/placement-modal";
 import { BloggerModal } from "@/components/modals/blogger-modal";
+import { BloggersModal } from "@/components/modals/bloggers-modal";
 import { BrandsModal } from "@/components/modals/brands-modal";
 import { BrandLegend } from "@/components/brand-legend";
 import type { Placement } from "@/lib/types";
@@ -73,6 +74,7 @@ export default function HomePage() {
     | { kind: "placement-create"; prefill?: Partial<Placement> }
     | { kind: "placement-edit"; placement: Placement }
     | { kind: "blogger"; bloggerId: string }
+    | { kind: "bloggers" }
     | { kind: "brands" }
     | null
   >(null);
@@ -135,11 +137,19 @@ export default function HomePage() {
             </div>
             <button
               className="iconbtn"
+              onClick={() => setModal({ kind: "bloggers" })}
+              aria-label="Блогеры"
+              title="Блогеры"
+            >
+              <Users size={16} />
+            </button>
+            <button
+              className="iconbtn"
               onClick={() => setModal({ kind: "brands" })}
               aria-label="Управление брендами"
               title="Бренды"
             >
-              <Settings size={16} />
+              <Store size={16} />
             </button>
             <button className="btn btn-primary" onClick={() => setModal({ kind: "placement-create" })}>
               <Plus size={15} strokeWidth={2.2} /> Размещение
@@ -242,6 +252,12 @@ export default function HomePage() {
           bloggerId={modal.bloggerId}
           onClose={() => setModal(null)}
           onOpenPlacement={(p) => setModal({ kind: "placement-edit", placement: p })}
+        />
+      )}
+      {modal?.kind === "bloggers" && (
+        <BloggersModal
+          onClose={() => setModal(null)}
+          onOpenBlogger={(id) => setModal({ kind: "blogger", bloggerId: id })}
         />
       )}
       {modal?.kind === "brands" && (
