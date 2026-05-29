@@ -6,7 +6,7 @@ import type { Placement, Blogger, ConflictResult, ConflictReason } from "@/lib/t
 import {
   CATEGORY_LABELS, TOOL_LABELS, TOOL_SHORT, FALLBACK_BRAND_COLOR,
 } from "@/lib/domain";
-import type { Brand, Tool, Category } from "@/lib/domain";
+import type { Brand, Tool, Category, Platform } from "@/lib/domain";
 import { useBrands, brandColor, brandShort, brandLabel } from "@/hooks/use-brands";
 import type { BrandRow } from "@/lib/types";
 import { useUpdatePlacement, useCheckConflict } from "@/hooks/use-placements";
@@ -152,12 +152,12 @@ export function ScheduleView({ year, month, placements, bloggers, onOpenPlacemen
       if (hover) {
         // Client-side preview against current placements (server still gates on submit).
         const others = (cellIndex[hover.bloggerId] ?? {});
-        const list: { id: string; date: string; bloggerId: string; brand: string; category: string; tool: string; status: string }[] = [];
+        const list: { id: string; date: string; bloggerId: string; brand: string; category: string; tool: string; platform: string; status: string }[] = [];
         for (const [, arr] of Object.entries(others)) {
           for (const p of arr) {
             list.push({
               id: p.id, date: p.date.slice(0, 10), bloggerId: p.bloggerId,
-              brand: p.brand, category: p.category, tool: p.tool, status: p.status,
+              brand: p.brand, category: p.category, tool: p.tool, platform: p.platform, status: p.status,
             });
           }
         }
@@ -167,6 +167,7 @@ export function ScheduleView({ year, month, placements, bloggers, onOpenPlacemen
           brand: drag.placement.brand as Brand,
           category: drag.placement.category as Category,
           tool: drag.placement.tool as Tool,
+          platform: drag.placement.platform as Platform,
           excludeId: drag.placement.id,
         }, list);
       }

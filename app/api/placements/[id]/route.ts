@@ -40,6 +40,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     brand: (patch.brand ?? current.brand) as Parameters<typeof detectConflictsForTarget>[0]["brand"],
     category: (patch.category ?? current.category) as Parameters<typeof detectConflictsForTarget>[0]["category"],
     tool: (patch.tool ?? current.tool) as Parameters<typeof detectConflictsForTarget>[0]["tool"],
+    platform: (patch.platform ?? current.platform) as Parameters<typeof detectConflictsForTarget>[0]["platform"],
   };
 
   const conflictResult = await detectConflictsForTarget({ ...next, excludeId: id });

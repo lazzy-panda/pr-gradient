@@ -40,6 +40,7 @@ export const checkConflictSchema = z.object({
   brand: brandCode,
   category: z.enum(CATEGORIES),
   tool: z.enum(TOOLS),
+  platform: z.enum(PLATFORMS),
   excludeId: z.string().optional().nullable(),
 });
 

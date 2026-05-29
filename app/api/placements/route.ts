@@ -48,6 +48,7 @@ export async function POST(req: Request) {
     brand: data.brand,
     category: data.category,
     tool: data.tool,
+    platform: data.platform,
   });
 
   if (conflictResult.hasConflict && !data.force) {

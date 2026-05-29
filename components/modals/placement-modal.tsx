@@ -66,19 +66,19 @@ export function PlacementModal({ mode, placement, prefill, bloggers, onClose }: 
   const checkMut = useCheckConflict();
   const [preview, setPreview] = useState<ConflictResult | null>(null);
   useEffect(() => {
-    const { date, bloggerId, brand, category, tool } = watched;
-    if (!date || !bloggerId || !brand || !category || !tool) {
+    const { date, bloggerId, brand, category, tool, platform } = watched;
+    if (!date || !bloggerId || !brand || !category || !tool || !platform) {
       setPreview(null);
       return;
     }
     let cancelled = false;
     checkMut.mutateAsync({
-      date, bloggerId, brand, category, tool,
+      date, bloggerId, brand, category, tool, platform,
       excludeId: mode === "edit" ? placement?.id : undefined,
     }).then((r) => { if (!cancelled) setPreview(r); }).catch(() => setPreview(null));
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watched.date, watched.bloggerId, watched.brand, watched.category, watched.tool]);
+  }, [watched.date, watched.bloggerId, watched.brand, watched.category, watched.tool, watched.platform]);
 
   const createMut = useCreatePlacement();
   const updateMut = useUpdatePlacement();

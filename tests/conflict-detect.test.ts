@@ -1,121 +1,210 @@
 import { describe, it, expect } from "vitest";
-import { detectConflicts, getSpacingThreshold, type PlacementLike } from "../lib/conflict-detect";
+import { detectConflicts, type PlacementLike } from "../lib/conflict-detect";
 
-const base: PlacementLike = {
-  id: "p1",
-  date: "2026-05-10",
-  bloggerId: "b1",
-  brand: "INFLUENCE_BEAUTY",
-  category: "LIPS",
-  tool: "KRUPNY",
-  status: "PLANNED",
-};
-
-describe("getSpacingThreshold", () => {
-  it("KRUPNY same category → 7 days", () => {
-    expect(getSpacingThreshold("KRUPNY", "KRUPNY", true)).toBe(7);
-  });
-  it("KRUPNY different category → 2 days", () => {
-    expect(getSpacingThreshold("KRUPNY", "KRUPNY", false)).toBe(2);
-  });
-  it("KRUPNY + SWIPE → 2 (max severity wins)", () => {
-    expect(getSpacingThreshold("KRUPNY", "SWIPE", false)).toBe(2);
-    expect(getSpacingThreshold("KRUPNY", "SWIPE", true)).toBe(7);
-  });
-  it("SWIPE same category → 3, different → 1", () => {
-    expect(getSpacingThreshold("SWIPE", "SWIPE", true)).toBe(3);
-    expect(getSpacingThreshold("SWIPE", "SWIPE", false)).toBe(1);
-  });
-  it("POSEV same category → 1, different → 0", () => {
-    expect(getSpacingThreshold("POSEV", "POSEV", true)).toBe(1);
-    expect(getSpacingThreshold("POSEV", "POSEV", false)).toBe(0);
-  });
+// Compact helper: build a PlacementLike with sensible defaults.
+const p = (overrides: Partial<PlacementLike> & { date: string }): PlacementLike => ({
+  id: overrides.id ?? "p1",
+  date: overrides.date,
+  bloggerId: overrides.bloggerId ?? "b1",
+  brand: overrides.brand ?? "INFLUENCE_BEAUTY",
+  category: overrides.category ?? "LIPS",
+  tool: overrides.tool ?? "KRUPNY",
+  platform: overrides.platform ?? "TIKTOK",
+  status: overrides.status ?? "PLANNED",
 });
 
-describe("detectConflicts — spec acceptance criteria", () => {
-  it("Same blogger, same brand → no conflict (intra-brand allowed)", () => {
+const target = (overrides: Partial<ReturnType<typeof p>> & { date: string }) => ({
+  date: overrides.date,
+  bloggerId: overrides.bloggerId ?? "b1",
+  brand: (overrides.brand ?? "VIVIENNE_SABO") as "VIVIENNE_SABO",
+  category: (overrides.category ?? "LIPS") as "LIPS",
+  tool: (overrides.tool ?? "KRUPNY") as "KRUPNY",
+  platform: (overrides.platform ?? "TIKTOK") as "TIKTOK",
+  excludeId: overrides.id,
+});
+
+describe("detectConflicts — base filters", () => {
+  it("intra-brand → no conflict", () => {
     const r = detectConflicts(
-      { date: "2026-05-11", bloggerId: "b1", brand: "INFLUENCE_BEAUTY", category: "LIPS", tool: "KRUPNY" },
-      [base],
+      target({ date: "2026-05-11", brand: "INFLUENCE_BEAUTY" }),
+      [p({ date: "2026-05-10" })],
     );
     expect(r.hasConflict).toBe(false);
   });
 
-  it("Same blogger, different brand, +1 day, KRUPNY+KRUPNY, same category → conflict (need 7)", () => {
+  it("different blogger → no conflict", () => {
     const r = detectConflicts(
-      { date: "2026-05-11", bloggerId: "b1", brand: "VIVIENNE_SABO", category: "LIPS", tool: "KRUPNY" },
-      [base],
+      target({ date: "2026-05-10", bloggerId: "b2" }),
+      [p({ date: "2026-05-10" })],
+    );
+    expect(r.hasConflict).toBe(false);
+  });
+
+  it("CANCELLED counterparts are ignored", () => {
+    const r = detectConflicts(
+      target({ date: "2026-05-11" }),
+      [p({ date: "2026-05-10", status: "CANCELLED" })],
+    );
+    expect(r.hasConflict).toBe(false);
+  });
+
+  it("excludeId skips the matching placement (edit case)", () => {
+    const r = detectConflicts(
+      { ...target({ date: "2026-05-11" }), excludeId: "p1" },
+      [p({ id: "p1", date: "2026-05-10" })],
+    );
+    expect(r.hasConflict).toBe(false);
+  });
+});
+
+describe("rule 5 — POSEV is out of category", () => {
+  it("target POSEV vs any → no conflict", () => {
+    const r = detectConflicts(
+      target({ date: "2026-05-10", tool: "POSEV" }),
+      [p({ date: "2026-05-10" })],
+    );
+    expect(r.hasConflict).toBe(false);
+  });
+  it("existing POSEV vs any → no conflict", () => {
+    const r = detectConflicts(
+      target({ date: "2026-05-10" }),
+      [p({ date: "2026-05-10", tool: "POSEV" })],
+    );
+    expect(r.hasConflict).toBe(false);
+  });
+});
+
+describe("rule 1 — same category + same month + same platform → ≥7 placements between", () => {
+  it("just two same-cat/same-platform on same blogger in same month → conflict (0 between)", () => {
+    const r = detectConflicts(
+      target({ date: "2026-05-20" }),
+      [p({ date: "2026-05-05" })],
     );
     expect(r.hasConflict).toBe(true);
-    expect(r.conflicts[0].daysActual).toBe(1);
+    expect(r.conflicts[0].placementsBetween).toBe(0);
     expect(r.conflicts[0].daysRequired).toBe(7);
-    expect(r.conflicts[0].sameCategory).toBe(true);
   });
 
-  it("Same blogger, different brand, +3 days, SWIPE+SWIPE, different category → no conflict", () => {
+  it("7 other non-POSEV placements between → no conflict", () => {
+    const existing: PlacementLike[] = [
+      p({ id: "main", date: "2026-05-05" }),
+      ...Array.from({ length: 7 }, (_, i) =>
+        p({ id: `f${i}`, date: `2026-05-${String(8 + i).padStart(2, "0")}`, brand: "BEAUTY_BOMB", category: "EYES", platform: "VK" }),
+      ),
+    ];
     const r = detectConflicts(
-      { date: "2026-05-13", bloggerId: "b1", brand: "VIVIENNE_SABO", category: "EYES", tool: "SWIPE" },
-      [{ ...base, tool: "SWIPE" }],
+      target({ date: "2026-05-20" }),
+      existing,
     );
+    // Counterpart "main" satisfies rule 1 (7 between). Counterpart fillers are EYES on VK
+    // vs target LIPS on TIKTOK → rule 4 (≥3 days), all are ≥3 days off the 20th, no issue.
     expect(r.hasConflict).toBe(false);
   });
 
-  it("Same blogger, different brand, +1 day, KRUPNY+SWIPE, different category → conflict (need 2)", () => {
+  it("POSEV between does not count toward the 7", () => {
+    const existing: PlacementLike[] = [
+      p({ id: "main", date: "2026-05-05" }),
+      ...Array.from({ length: 7 }, (_, i) =>
+        p({ id: `f${i}`, date: `2026-05-${String(8 + i).padStart(2, "0")}`, tool: "POSEV", brand: "BEAUTY_BOMB", category: "EYES", platform: "VK" }),
+      ),
+    ];
     const r = detectConflicts(
-      { date: "2026-05-11", bloggerId: "b1", brand: "VIVIENNE_SABO", category: "EYES", tool: "SWIPE" },
-      [base], // base is KRUPNY
+      target({ date: "2026-05-20" }),
+      existing,
     );
     expect(r.hasConflict).toBe(true);
-    expect(r.conflicts[0].daysRequired).toBe(2);
+    expect(r.conflicts.find((c) => c.placementId === "main")?.placementsBetween).toBe(0);
   });
 });
 
-describe("detectConflicts — edge cases", () => {
-  it("Same blogger, different brand, same day → always conflict", () => {
+describe("rule 2 — same category + same month + different platform → ≥14 days", () => {
+  it("13 days apart → conflict", () => {
     const r = detectConflicts(
-      { date: "2026-05-10", bloggerId: "b1", brand: "VIVIENNE_SABO", category: "HAIR", tool: "POSEV" },
-      [base],
+      target({ date: "2026-05-15", platform: "VK" }),
+      [p({ date: "2026-05-02", platform: "TIKTOK" })],
     );
     expect(r.hasConflict).toBe(true);
-    expect(r.conflicts[0].daysActual).toBe(0);
+    expect(r.conflicts[0].daysActual).toBe(13);
+    expect(r.conflicts[0].daysRequired).toBe(14);
   });
-
-  it("CANCELLED placements are ignored", () => {
+  it("exactly 14 days apart → ok", () => {
     const r = detectConflicts(
-      { date: "2026-05-11", bloggerId: "b1", brand: "VIVIENNE_SABO", category: "LIPS", tool: "KRUPNY" },
-      [{ ...base, status: "CANCELLED" }],
+      target({ date: "2026-05-16", platform: "VK" }),
+      [p({ date: "2026-05-02", platform: "TIKTOK" })],
     );
     expect(r.hasConflict).toBe(false);
   });
+});
 
-  it("excludeId is skipped (update case)", () => {
+describe("rule 3 — different categories + same platform → ≥14 days", () => {
+  it("10 days apart on same platform → conflict", () => {
     const r = detectConflicts(
-      { date: "2026-05-11", bloggerId: "b1", brand: "VIVIENNE_SABO", category: "LIPS", tool: "KRUPNY", excludeId: "p1" },
-      [base],
-    );
-    expect(r.hasConflict).toBe(false);
-  });
-
-  it("Different blogger → never conflict", () => {
-    const r = detectConflicts(
-      { date: "2026-05-10", bloggerId: "b2", brand: "VIVIENNE_SABO", category: "LIPS", tool: "KRUPNY" },
-      [base],
-    );
-    expect(r.hasConflict).toBe(false);
-  });
-
-  it("Date objects work alongside strings", () => {
-    const r = detectConflicts(
-      {
-        date: new Date(Date.UTC(2026, 4, 11)),
-        bloggerId: "b1",
-        brand: "VIVIENNE_SABO",
-        category: "LIPS",
-        tool: "KRUPNY",
-      },
-      [{ ...base, date: new Date(Date.UTC(2026, 4, 10)) }],
+      target({ date: "2026-05-15", category: "EYES" }),
+      [p({ date: "2026-05-05", category: "LIPS" })],
     );
     expect(r.hasConflict).toBe(true);
-    expect(r.conflicts[0].daysActual).toBe(1);
+    expect(r.conflicts[0].daysRequired).toBe(14);
+  });
+  it("decor vs care on same platform (cross-segment) → treated as diff category, ≥14 days", () => {
+    const r = detectConflicts(
+      target({ date: "2026-05-10", category: "CARE" }),
+      [p({ date: "2026-05-05", category: "LIPS" })],
+    );
+    expect(r.hasConflict).toBe(true);
+    expect(r.conflicts[0].daysRequired).toBe(14);
+  });
+});
+
+describe("rule 4 — different categories + different platforms → ≥3 days", () => {
+  it("2 days apart → conflict", () => {
+    const r = detectConflicts(
+      target({ date: "2026-05-12", category: "EYES", platform: "VK" }),
+      [p({ date: "2026-05-10", category: "LIPS", platform: "TIKTOK" })],
+    );
+    expect(r.hasConflict).toBe(true);
+    expect(r.conflicts[0].daysRequired).toBe(3);
+  });
+  it("3 days apart → ok", () => {
+    const r = detectConflicts(
+      target({ date: "2026-05-13", category: "EYES", platform: "VK" }),
+      [p({ date: "2026-05-10", category: "LIPS", platform: "TIKTOK" })],
+    );
+    expect(r.hasConflict).toBe(false);
+  });
+});
+
+describe("same category, different months → no constraint", () => {
+  it("May 31 + June 1 (same cat, same platform, diff month) → ok", () => {
+    const r = detectConflicts(
+      target({ date: "2026-06-01" }),
+      [p({ date: "2026-05-31" })],
+    );
+    expect(r.hasConflict).toBe(false);
+  });
+});
+
+describe("exclusive brands — soft flag only at <3 days", () => {
+  it("PF + holding 2 days apart → flagged", () => {
+    const r = detectConflicts(
+      target({ date: "2026-05-12", brand: "PHYSICIANS_FORMULA" }),
+      [p({ date: "2026-05-10", brand: "INFLUENCE_BEAUTY" })],
+    );
+    expect(r.hasConflict).toBe(true);
+    expect(r.conflicts[0].reason).toMatch(/Эксклюзивный/);
+  });
+  it("ARTDECO + holding 3 days apart → ok", () => {
+    const r = detectConflicts(
+      target({ date: "2026-05-13", brand: "ARTDECO" }),
+      [p({ date: "2026-05-10", brand: "INFLUENCE_BEAUTY" })],
+    );
+    expect(r.hasConflict).toBe(false);
+  });
+  it("DM + holding same day (intra-platform same cat, would normally be rule 1) → flagged via exclusive path", () => {
+    const r = detectConflicts(
+      target({ date: "2026-05-10", brand: "DEBORAH_MILANO" }),
+      [p({ date: "2026-05-10", brand: "INFLUENCE_BEAUTY" })],
+    );
+    expect(r.hasConflict).toBe(true);
+    expect(r.conflicts[0].reason).toMatch(/Эксклюзивный/);
   });
 });

@@ -5,7 +5,7 @@
 
 import { detectConflicts, type PlacementLike, type ConflictResult } from "./conflict-detect";
 import type { Placement } from "./types";
-import type { Brand, Category, Tool } from "./domain";
+import type { Brand, Category, Platform, Tool } from "./domain";
 
 export function buildConflictMap(placements: Placement[]): Record<string, ConflictResult> {
   const lookup: PlacementLike[] = placements.map(p => ({
@@ -15,6 +15,7 @@ export function buildConflictMap(placements: Placement[]): Record<string, Confli
     brand: p.brand,
     category: p.category,
     tool: p.tool,
+    platform: p.platform,
     status: p.status,
   }));
 
@@ -35,6 +36,7 @@ export function buildConflictMap(placements: Placement[]): Record<string, Confli
         brand: p.brand as Brand,
         category: p.category as Category,
         tool: p.tool as Tool,
+        platform: p.platform as Platform,
         excludeId: p.id,
       },
       others,
